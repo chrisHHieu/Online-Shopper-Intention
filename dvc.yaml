@@ -1,0 +1,30 @@
+# Reproducible pipeline. Raw data is tracked with a DVC pointer
+# (data/raw/online_shoppers_intention.csv.dvc); the downloaded payload is cached,
+# never committed. The data stages are locked in dvc.lock. Training and
+# evaluation are locked by their MLflow run instead, because each one depends on a
+# search that is recorded with its config hash.
+stages:
+  fetch:
+    cmd: python -m shopper_intent fetch --config configs/full.yaml
+    deps:
+      - src/shopper_intent/data/fetch.py
+      - configs/full.yaml
+    outs:
+      - data/raw/manifest.json
+
+  validate:
+    cmd: python -m shopper_intent validate --config configs/full.yaml
+    deps:
+      - data/raw/online_shoppers_intention.csv
+      - src/shopper_intent/data/validate.py
+      - src/shopper_intent/data/contracts.py
+      - configs/full.yaml
+
+  features:
+    cmd: python -m shopper_intent features --config configs/full.yaml
+    deps:
+      - data/raw/online_shoppers_intention.csv
+      - src/shopper_intent/features/build.py
+      - configs/full.yaml
+    outs:
+      - data/processed/sessions.csv

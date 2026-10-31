@@ -4,7 +4,7 @@
 
 | Item | Value |
 |---|---|
-| Model name | `shopper_intent` LightGBM, version `20261031T115910Z` |
+| Model name | `shopper_intent` LightGBM, version `20261031T144050Z` |
 | Model type | Gradient boosted trees (`LGBMClassifier`) with isotonic calibration |
 | Baseline | Logistic regression with standardised features and balanced class weights |
 | Task | Binary classification: does this session end in a purchase |
@@ -44,9 +44,9 @@ Cross-validated, out-of-fold, 9,864 sessions:
 | Model | PR-AUC | ROC-AUC | Brier | Precision | Recall | F1 | Net value per 1000 |
 |---|---|---|---|---|---|---|---|
 | Logistic regression | 0.6614 | 0.9060 | 0.0780 | 0.2061 | 0.9948 | 0.3415 | 14,642.64 |
-| LightGBM (champion) | 0.7332 | 0.9359 | 0.0676 | 0.2513 | 1.0000 | 0.4017 | 14,844.28 |
-| XGBoost | 0.7325 | 0.9290 | 0.0694 | 0.2387 | 1.0000 | 0.3855 | 14,815.29 |
-| CatBoost | 0.7351 | 0.9350 | 0.0671 | 0.2407 | 0.9974 | 0.3878 | 14,813.06 |
+| LightGBM (champion) | 0.7332 | 0.9359 | 0.0676 | 0.2592 | 0.9980 | 0.4115 | 14,844.28 |
+| XGBoost | 0.7325 | 0.9290 | 0.0694 | 0.2472 | 0.9980 | 0.3962 | 14,815.29 |
+| CatBoost | 0.7351 | 0.9350 | 0.0671 | 0.2425 | 0.9987 | 0.3903 | 14,813.06 |
 
 Held-out, 2,466 sessions, LightGBM at threshold 0.0192:
 

@@ -1,0 +1,41 @@
+schema: '2.0'
+stages:
+  validate:
+    cmd: python -m shopper_intent validate --config configs/full.yaml
+    deps:
+    - path: configs/full.yaml
+      hash: md5
+      md5: 270f1bafa1134de87824f7fac3d4e5fd
+      size: 3355
+    - path: data/raw/online_shoppers_intention.csv
+      hash: md5
+      md5: cc6ec1db03b4f10f8de52c56ff48b085
+      size: 1072063
+    - path: src/shopper_intent/data/contracts.py
+      hash: md5
+      md5: 0a7e16ec4d9a0f2ff40b8a4360982fed
+      size: 5108
+    - path: src/shopper_intent/data/validate.py
+      hash: md5
+      md5: face6db6e9abe7d6310de0a8f8a44e27
+      size: 9304
+  features:
+    cmd: python -m shopper_intent features --config configs/full.yaml
+    deps:
+    - path: configs/full.yaml
+      hash: md5
+      md5: 270f1bafa1134de87824f7fac3d4e5fd
+      size: 3355
+    - path: data/raw/online_shoppers_intention.csv
+      hash: md5
+      md5: cc6ec1db03b4f10f8de52c56ff48b085
+      size: 1072063
+    - path: src/shopper_intent/features/build.py
+      hash: md5
+      md5: d9f9cf926c64ecf2891ff50f5eab6c66
+      size: 9775
+    outs:
+    - path: data/processed/sessions.csv
+      hash: md5
+      md5: 4e7651f4b26458f0b4e56917c2d2b4cf
+      size: 2205906

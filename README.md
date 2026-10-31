@@ -26,7 +26,7 @@ All four models run through the same protocol: 5-fold cross-validation on the tr
 | XGBoost | 0.0180 | 0.2387 | 1.0000 | 0.3855 | 0.7032 | 0.9240 | 0.0739 | 0.0066 | 14,841.85 |
 | CatBoost | 0.0155 | 0.2407 | 0.9974 | 0.3878 | 0.7190 | 0.9285 | 0.0707 | 0.0043 | 14,808.19 |
 
-LightGBM is the champion because it has the highest out-of-fold net value per 1000 sessions (14,844.28), and it also has the best held-out value of the four (14,874.29). The gap to the baseline is real but small: 273.72 per 1000 sessions more than contacting everyone. CatBoost has the best calibration (ECE 0.0043) and the best Brier (0.0707), which is why it stays registered as a challenger rather than being dropped.
+LightGBM is the champion because it has the highest out-of-fold net value per 1000 sessions (14,844.28), and it also has the best held-out value of the four (14,874.29). The gap to always-contact is real but small: 383.62 per 1000 sessions. Against the logistic baseline the champion is 273.72 ahead, which is the smaller comparison of the two. CatBoost has the best calibration (ECE 0.0043) and the best Brier (0.0707), which is why it stays registered as a challenger rather than being dropped.
 
 The held-out threshold contacts 1,520 of 2,466 sessions (61.6 percent), captures all 382 conversions and adds 383.62 per 1000 sessions over contacting everyone. The logistic baseline contacts 1,895 sessions to capture 379 conversions, so most of the model's advantage is precision, not recall.
 
@@ -45,7 +45,7 @@ Stratified 5-fold cross-validation inside the training split (9,864 sessions), o
 
 The three gradient-boosted models are within 31 units of net value per 1000 sessions of each other and 170 to 202 above the baseline. CatBoost has the best PR-AUC by 0.0019 over LightGBM, which is inside fold noise. The margin over always-contact stays small because the default economics make blanket outreach profitable: at 100 value and 1 cost, any session with a probability above 0.01 is worth contacting, and the base rate is 0.155.
 
-Permutation importance on the held-out split ranks `PageValues` first (ROC-AUC drop 0.1063), then `PageValuePerProductPage` (0.0442), `Month_May` (0.0222), `Month_Nov` (0.0201) and `Month_Mar` (0.0098).
+Permutation importance on the held-out split ranks `PageValues` first (ROC-AUC drop 0.1063), then `PageValuePerProductPage` (0.0442), `Month_May` (0.0222), `Month_Nov` (0.0201) and `Month_Mar` (0.0071).
 
 ### Decile lift, held-out split, LightGBM
 
@@ -111,6 +111,8 @@ python -m pip install -e ".[dev]"
 python -m shopper_intent fetch
 python -m shopper_intent validate && python -m shopper_intent features
 python -m shopper_intent train && python -m shopper_intent evaluate
+
+dvc repro validate features   # data stages only; training is locked by its MLflow run
 python -m shopper_intent serve
 ```
 
@@ -159,7 +161,7 @@ uses the libraries a production team would:
 
 | Concern | Library or file | Notes |
 | --- | --- | --- |
-| Tracking and registry | MLflow 3, SQLite store | one run per training, `shopper_intent_<model>` registered, `champion` alias |
+| Tracking and registry | MLflow 3, file store (`file:./mlruns`) | one run per training, `shopper_intent_<model>` registered, `champion` alias |
 | Registered artifact | `pyfunc` wrapper around the calibrated model | loading it reproduces threshold, calibration and band, not just the raw score |
 | Hyperparameter search | Optuna 5, TPE plus MedianPruner | `reports/optuna.db`, writes `configs/tuned.yaml` |
 | Data contract | Pandera 0.35 | fails before training when a column or dtype drifts |
@@ -168,11 +170,11 @@ uses the libraries a production team would:
 | Uncertainty | split conformal, written and tested here | `models/conformal.py`, coverage reported on test rows |
 | Attribution | SHAP, with a group-by-attribute view for one-hot columns | `models/explain.py` |
 | Native categoricals | CatBoost and XGBoost consume the raw levels | no one-hot round trip for those two |
-| Data versioning | DVC | `dvc.yaml`, payload stays out of git |
+| Data versioning | DVC 3 | `dvc.yaml` and a committed `dvc.lock`: the payload is tracked as a pointer (`data/raw/online_shoppers_intention.csv.dvc`), `dvc repro validate features` rebuilds the data stages |
 
-CI has three jobs: the core suite (logistic and LightGBM only), a `modern` job
-that adds the tracking, tuning, contract and report extras, and a `deep` job that
-runs only on `workflow_dispatch`.
+CI has two jobs: the core suite (logistic and LightGBM only) and a `modern` job
+that adds the tracking, tuning, contract and report extras. There is no torch or
+foundation-model job in this repository, so no `deep` job either.
 
 ## Model card
 
