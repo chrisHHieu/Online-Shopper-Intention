@@ -1,0 +1,87 @@
+project:
+  name: online-shopper-intention
+  version: "1.0.0"
+
+data:
+  source_url: "https://archive.ics.uci.edu/static/public/468/data.csv"
+  fallback_url: "https://archive.ics.uci.edu/ml/machine-learning-databases/00468/online_shoppers_intention.csv"
+  # SHA256 is recorded on first fetch. Set this to pin the exact bytes and make
+  # a changed upstream file fail loudly instead of silently retraining on it.
+  expected_sha256: null
+  raw_dir: data/raw
+  processed_dir: data/processed
+  raw_filename: online_shoppers_intention.csv
+  user_agent: "shopper-intent/1.0 (research; contact hoanghieu1642002@gmail.com)"
+  timeout_seconds: 30
+  max_retries: 3
+  min_interval_seconds: 1.0
+  min_rows: 10000
+  max_duplicate_fraction: 0.02
+  min_positive_rate: 0.05
+  max_positive_rate: 0.50
+
+features:
+  target: Revenue
+  processed_filename: sessions.csv
+  test_size: 0.2
+  seed: 42
+  numeric:
+    - Administrative
+    - Administrative_Duration
+    - Informational
+    - Informational_Duration
+    - ProductRelated
+    - ProductRelated_Duration
+    - BounceRates
+    - ExitRates
+    - PageValues
+    - SpecialDay
+    - OperatingSystems
+    - Browser
+    - Region
+    - TrafficType
+  categorical:
+    Month: [Feb, Mar, May, June, Jul, Aug, Sep, Oct, Nov, Dec]
+    VisitorType: [Returning_Visitor, New_Visitor, Other]
+    Weekend: [False, True]
+
+model:
+  seed: 42
+  cv_folds: 5
+  lightgbm:
+    n_estimators: 400
+    learning_rate: 0.05
+    num_leaves: 31
+    min_child_samples: 40
+    subsample: 0.9
+    subsample_freq: 1
+    colsample_bytree: 0.9
+    reg_lambda: 1.0
+    is_unbalance: true
+  logistic:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+
+business:
+  value_per_conversion: 100.0
+  cost_per_outreach: 1.0
+  default_threshold: 0.5
+  threshold_candidates: 500
+  # Outreach costs swept against a fixed value per conversion in the
+  # cost sensitivity report. Thresholds are still chosen on training OOF only.
+  sensitivity_costs: [1.0, 5.0, 10.0, 25.0, 50.0]
+
+calibration:
+  method: isotonic
+  clip_low: 0.0001
+  clip_high: 0.9999
+
+registry:
+  models_dir: models
+  reports_dir: reports
+
+serving:
+  host: 127.0.0.1
+  port: 8125
+  model: lightgbm

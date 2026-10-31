@@ -1,0 +1,276 @@
+{
+  "generated_at": "2026-10-31T12:31:58+00:00",
+  "reference": "training split",
+  "current": "held_out_test_split",
+  "reference_rows": 9864,
+  "current_rows": 2466,
+  "thresholds": {
+    "stable_below": 0.1,
+    "significant_from": 0.25
+  },
+  "summary": {
+    "features_checked": 32,
+    "significant": 0,
+    "moderate": 0,
+    "max_psi": 0.005971747191514654,
+    "drift_detected": false
+  },
+  "features": [
+    {
+      "feature": "ProductRelated",
+      "psi": 0.005971747191514654,
+      "status": "stable",
+      "reference_mean": 31.452757502027573,
+      "current_mean": 32.8463098134631,
+      "mean_shift_in_sd": 0.03195251401445252
+    },
+    {
+      "feature": "BounceExitSpread",
+      "psi": 0.005772332811186401,
+      "status": "stable",
+      "reference_mean": 0.020917699592051895,
+      "current_mean": 0.020736288110705582,
+      "mean_shift_in_sd": -0.008916051578674276
+    },
+    {
+      "feature": "ExitRates",
+      "psi": 0.004671979751833677,
+      "status": "stable",
+      "reference_mean": 0.043313278397911596,
+      "current_mean": 0.04211087524087591,
+      "mean_shift_in_sd": -0.02458953880772681
+    },
+    {
+      "feature": "Administrative",
+      "psi": 0.004244326403625593,
+      "status": "stable",
+      "reference_mean": 2.3176196269261964,
+      "current_mean": 2.3053527980535278,
+      "mean_shift_in_sd": -0.003695967889773865
+    },
+    {
+      "feature": "DurationPerPage",
+      "psi": 0.0040398259900216085,
+      "status": "stable",
+      "reference_mean": 34.77151351901574,
+      "current_mean": 34.865880383540784,
+      "mean_shift_in_sd": 0.0027972719358894385
+    },
+    {
+      "feature": "ProductRelated_Duration",
+      "psi": 0.003941028123345917,
+      "status": "stable",
+      "reference_mean": 1186.5460097801076,
+      "current_mean": 1227.5470607237023,
+      "mean_shift_in_sd": 0.021476014259285765
+    },
+    {
+      "feature": "Region",
+      "psi": 0.003198240829240056,
+      "status": "stable",
+      "reference_mean": 3.1527777777777777,
+      "current_mean": 3.1257096512570963,
+      "mean_shift_in_sd": -0.011298077196059885
+    },
+    {
+      "feature": "TrafficType",
+      "psi": 0.002135456910514872,
+      "status": "stable",
+      "reference_mean": 4.071167883211679,
+      "current_mean": 4.0632603406326036,
+      "mean_shift_in_sd": -0.0019694867621660277
+    },
+    {
+      "feature": "Month_Nov",
+      "psi": 0.002026961051038437,
+      "status": "stable",
+      "reference_mean": 0.23925385239253852,
+      "current_mean": 0.2587185725871857,
+      "mean_shift_in_sd": 0.045624573168916285
+    },
+    {
+      "feature": "VisitorType_Other",
+      "psi": 0.0015904352953463015,
+      "status": "stable",
+      "reference_mean": 0.007502027575020276,
+      "current_mean": 0.004460665044606651,
+      "mean_shift_in_sd": -0.03524634183984389
+    },
+    {
+      "feature": "Administrative_Duration",
+      "psi": 0.0013355182641651955,
+      "status": "stable",
+      "reference_mean": 81.24105935687328,
+      "current_mean": 79.12881526918653,
+      "mean_shift_in_sd": -0.011760738367053974
+    },
+    {
+      "feature": "Browser",
+      "psi": 0.0008493626403280558,
+      "status": "stable",
+      "reference_mean": 2.366788321167883,
+      "current_mean": 2.3183292781832927,
+      "mean_shift_in_sd": -0.02796699409363428
+    },
+    {
+      "feature": "BounceRates",
+      "psi": 0.0008084254381467053,
+      "status": "stable",
+      "reference_mean": 0.022395578805859694,
+      "current_mean": 0.021374587130170312,
+      "mean_shift_in_sd": -0.0209191740956413
+    },
+    {
+      "feature": "Month_Sep",
+      "psi": 0.000704642189116335,
+      "status": "stable",
+      "reference_mean": 0.0373073803730738,
+      "current_mean": 0.032441200324412,
+      "mean_shift_in_sd": -0.025677159277318833
+    },
+    {
+      "feature": "PageValues",
+      "psi": 0.00061102829229586,
+      "status": "stable",
+      "reference_mean": 5.944561786484692,
+      "current_mean": 5.668042167529197,
+      "mean_shift_in_sd": -0.014897700654939266
+    },
+    {
+      "feature": "SpecialDay",
+      "psi": 0.0005000425927000004,
+      "status": "stable",
+      "reference_mean": 0.06269261962692621,
+      "current_mean": 0.056366585563665854,
+      "mean_shift_in_sd": -0.03143199957558369
+    },
+    {
+      "feature": "Informational",
+      "psi": 0.0003791484504191559,
+      "status": "stable",
+      "reference_mean": 0.5046634225466342,
+      "current_mean": 0.4991889699918897,
+      "mean_shift_in_sd": -0.004293337481828241
+    },
+    {
+      "feature": "PageValuePerProductPage",
+      "psi": 0.00035093030638179955,
+      "status": "stable",
+      "reference_mean": 0.2960947236720138,
+      "current_mean": 0.270082138513865,
+      "mean_shift_in_sd": -0.018461670646324604
+    },
+    {
+      "feature": "Month_Mar",
+      "psi": 0.00030526143234669656,
+      "status": "stable",
+      "reference_mean": 0.1559205190592052,
+      "current_mean": 0.14963503649635038,
+      "mean_shift_in_sd": -0.017325880652842067
+    },
+    {
+      "feature": "Month_Dec",
+      "psi": 0.00019013641523383347,
+      "status": "stable",
+      "reference_mean": 0.14101784266017842,
+      "current_mean": 0.1362530413625304,
+      "mean_shift_in_sd": -0.01369038588999836
+    },
+    {
+      "feature": "Month_May",
+      "psi": 0.0001810832389399183,
+      "status": "stable",
+      "reference_mean": 0.27402676399026765,
+      "current_mean": 0.2680454176804542,
+      "mean_shift_in_sd": -0.013410412966672624
+    },
+    {
+      "feature": "OperatingSystems",
+      "psi": 0.00016494755518832118,
+      "status": "stable",
+      "reference_mean": 2.1275344687753446,
+      "current_mean": 2.1098945660989457,
+      "mean_shift_in_sd": -0.01921450301835923
+    },
+    {
+      "feature": "VisitorType_New_Visitor",
+      "psi": 0.0001446866491058759,
+      "status": "stable",
+      "reference_mean": 0.1365571776155718,
+      "current_mean": 0.14071370640713707,
+      "mean_shift_in_sd": 0.01210477538800695
+    },
+    {
+      "feature": "Month_Aug",
+      "psi": 0.00014420492095288778,
+      "status": "stable",
+      "reference_mean": 0.03467153284671533,
+      "current_mean": 0.036901865369018655,
+      "mean_shift_in_sd": 0.01219117426365305
+    },
+    {
+      "feature": "Month_Oct",
+      "psi": 0.00014139752260293372,
+      "status": "stable",
+      "reference_mean": 0.045012165450121655,
+      "current_mean": 0.04257907542579075,
+      "mean_shift_in_sd": -0.011735302943237765
+    },
+    {
+      "feature": "Weekend_False",
+      "psi": 0.00010118380701486524,
+      "status": "stable",
+      "reference_mean": 0.7682481751824818,
+      "current_mean": 0.7639902676399026,
+      "mean_shift_in_sd": -0.01009099234917301
+    },
+    {
+      "feature": "Weekend_True",
+      "psi": 0.00010118380701486524,
+      "status": "stable",
+      "reference_mean": 0.23175182481751824,
+      "current_mean": 0.2360097323600973,
+      "mean_shift_in_sd": 0.010090992349172812
+    },
+    {
+      "feature": "Month_June",
+      "psi": 6.39165455812625e-05,
+      "status": "stable",
+      "reference_mean": 0.023114355231143552,
+      "current_mean": 0.024330900243309004,
+      "mean_shift_in_sd": 0.008095905438304192
+    },
+    {
+      "feature": "Month_Feb",
+      "psi": 2.4873175671842464e-05,
+      "status": "stable",
+      "reference_mean": 0.014801297648012976,
+      "current_mean": 0.015409570154095702,
+      "mean_shift_in_sd": 0.005037167297211208
+    },
+    {
+      "feature": "Month_Jul",
+      "psi": 1.9327013495127406e-05,
+      "status": "stable",
+      "reference_mean": 0.034874290348742905,
+      "current_mean": 0.035685320356853206,
+      "mean_shift_in_sd": 0.004420712702862604
+    },
+    {
+      "feature": "VisitorType_Returning_Visitor",
+      "psi": 1.005313832424086e-05,
+      "status": "stable",
+      "reference_mean": 0.855940794809408,
+      "current_mean": 0.8548256285482563,
+      "mean_shift_in_sd": -0.003175756908774846
+    },
+    {
+      "feature": "Informational_Duration",
+      "psi": 0.0,
+      "status": "stable",
+      "reference_mean": 34.59025166334043,
+      "current_mean": 34.00098298525345,
+      "mean_shift_in_sd": -0.0041667456189503
+    }
+  ]
+}
