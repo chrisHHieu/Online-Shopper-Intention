@@ -15,7 +15,8 @@ def test_fixture_passes(fixture_config, raw_sessions: pd.DataFrame) -> None:
     assert report.row_count == len(raw_sessions)
     assert report.positive_rate is not None
     assert 0.05 < report.positive_rate < 0.5
-    assert all(check.status in {"pass", "warn"} for check in report.checks)
+    # "skip" is the honest status when an optional backend (pandera) is absent.
+    assert all(check.status in {"pass", "warn", "skip"} for check in report.checks)
 
 
 def test_validate_reads_raw_file(fixture_config) -> None:
