@@ -1,6 +1,0 @@
-mlflow==3.17.2
-pandas
-numpy
-scikit-learn
-joblib
-pyyaml

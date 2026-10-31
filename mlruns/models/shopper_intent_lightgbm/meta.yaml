@@ -1,9 +1,0 @@
-aliases:
-  champion: '1'
-creation_timestamp: 1793457783964
-deployment_job_id: null
-deployment_job_state: null
-description: null
-last_updated_timestamp: 1793457928826
-name: shopper_intent_lightgbm
-workspace: default
