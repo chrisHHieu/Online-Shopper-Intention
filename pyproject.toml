@@ -30,6 +30,16 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.5",
 ]
+modern = [
+    "mlflow>=2.16",
+    "optuna>=3.6",
+    "pandera>=0.20",
+    "evidently>=0.6",
+    "shap>=0.45",
+    "catboost>=1.2",
+    "xgboost>=2.0",
+    "mapie>=0.9",
+]
 
 [project.scripts]
 shopper-intent = "shopper_intent.cli:main"
@@ -56,6 +66,9 @@ known-first-party = ["shopper_intent"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "modern: needs the optional modern extra; skipped by importorskip in the core job",
+]
 addopts = "-ra"
 filterwarnings = [
     "ignore::DeprecationWarning",

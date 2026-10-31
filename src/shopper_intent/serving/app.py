@@ -56,11 +56,16 @@ class Contribution(BaseModel):
     feature: str
     contribution: float
     direction: Literal["increases", "decreases"]
+    reason: str | None = None
+    value: float | None = None
+    value_label: str | None = None
+    engine: str | None = None
 
 
 class PredictionOut(BaseModel):
     conversion_probability: float
     decision: Literal["contact", "skip"]
+    band: Literal["skip", "standard", "priority", "unsupported"]
     threshold: float
     expected_value_if_contacted: float
     expected_value_of_decision: float
@@ -101,6 +106,7 @@ def _predict(model: Any, frame: pd.DataFrame, top_k: int = 3) -> list[Prediction
             PredictionOut(
                 conversion_probability=round(float(result["probability"][index]), 6),
                 decision=str(result["decision"][index]),
+                band=str(result["band"][index]),
                 threshold=round(float(model.threshold), 6),
                 expected_value_if_contacted=round(
                     float(result["expected_value_if_contacted"][index]), 4
@@ -176,6 +182,10 @@ def create_app(config: Settings | None = None) -> FastAPI:
             "metrics": metadata.get("metrics", {}),
             "protocol": metadata.get("protocol"),
             "feature_names": model.feature_names,
+            "registered_model": (
+                f"{settings.tracking.registered_model_prefix}_{model.model_type}"
+            ),
+            "champion_alias": settings.tracking.champion_alias,
         }
 
     @application.post("/predict", response_model=PredictionOut)

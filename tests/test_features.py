@@ -112,3 +112,20 @@ def test_raw_column_list_matches_source() -> None:
     assert len(RAW_COLUMNS) == 17
     assert RAW_COLUMNS[0] == "Administrative"
     assert RAW_COLUMNS[-1] == "Weekend"
+
+
+def test_filtered_rows_keep_alignment(fixture_config, raw_sessions: pd.DataFrame) -> None:
+    """A subset must produce the same rows as the matching rows of the full build.
+
+    Regression: get_dummies restarted the index for the categorical blocks, so a
+    filtered frame (drift periods, serving batches) came back misaligned.
+    """
+    from shopper_intent.features.build import build_features
+
+    full = build_features(raw_sessions, fixture_config)
+    subset = raw_sessions[raw_sessions["Month"].isin(["Feb", "May"])]
+    assert len(subset) > 0
+    part = build_features(subset, fixture_config)
+    assert list(part.columns) == list(full.columns)
+    assert part.index.equals(subset.index)
+    assert (part.to_numpy() == full.loc[subset.index].to_numpy()).all()

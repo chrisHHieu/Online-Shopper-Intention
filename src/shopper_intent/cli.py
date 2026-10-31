@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from shopper_intent.config import CONFIG_ENV_VAR, Settings, load_config
+from shopper_intent.config import CONFIG_ENV_VAR, MODEL_NAMES, Settings, load_config
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -43,11 +43,41 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument(
         "--models",
         nargs="+",
-        choices=["logistic", "lightgbm"],
+        choices=list(MODEL_NAMES),
         default=None,
         help="subset of model types to train",
     )
     train_parser.add_argument("--version", default=None, help="registry version to write")
+    train_parser.add_argument(
+        "--track",
+        action="store_true",
+        default=None,
+        help="log the run to MLflow and register the models",
+    )
+    train_parser.add_argument(
+        "--no-track",
+        dest="track",
+        action="store_false",
+        help="skip MLflow even when tracking.enabled is true in the config",
+    )
+
+    tune_parser = subparsers.add_parser(
+        "tune",
+        parents=[common],
+        help="search hyperparameters with Optuna and write a tuned config",
+    )
+    tune_parser.add_argument("--trials", type=int, default=None, help="trials per model")
+    tune_parser.add_argument(
+        "--models",
+        nargs="+",
+        choices=list(MODEL_NAMES),
+        default=None,
+        help="models to tune, defaults to tuning.models or serving.model",
+    )
+    tune_parser.add_argument("--timeout", type=int, default=None, help="seconds per study")
+    tune_parser.add_argument(
+        "--out", type=Path, default=None, help="tuned config path, defaults to configs/tuned.yaml"
+    )
 
     evaluate_parser = subparsers.add_parser(
         "evaluate", parents=[common], help="score the held-out split and draw figures"
@@ -77,6 +107,17 @@ def build_parser() -> argparse.ArgumentParser:
     drift_parser.add_argument(
         "--current", type=Path, default=None, help="raw CSV of new sessions to compare"
     )
+    drift_parser.add_argument(
+        "--evidently",
+        action="store_true",
+        help="also write the Evidently HTML drift report",
+    )
+    drift_parser.add_argument(
+        "--reference-months", default=None, help="comma separated months for the reference period"
+    )
+    drift_parser.add_argument(
+        "--current-months", default=None, help="comma separated months for the current period"
+    )
 
     serve_parser = subparsers.add_parser("serve", parents=[common], help="run the FastAPI service")
     serve_parser.add_argument("--host", default=None)
@@ -93,38 +134,62 @@ def _print_fetch(manifest: dict, cached: bool) -> None:
         print("note: primary URL failed, fallback URL was used")
 
 
+def _months(value: str | None) -> list[str] | None:
+    if not value:
+        return None
+    months = [part.strip() for part in value.split(",") if part.strip()]
+    return months or None
+
+
 def _print_train(results: dict) -> None:
     print(f"version {results['version']}")
-    header = f"{'model':<10s} {'threshold':>9s} {'cv_pr_auc':>10s} {'test_pr_auc':>11s} " \
-             f"{'test_roc':>9s} {'test_f1':>8s} {'value/1000':>11s}"
+    header = (
+        f"{'model':<10s} {'calib':<9s} {'threshold':>9s} {'cv_pr_auc':>10s} "
+        f"{'test_pr_auc':>11s} {'test_roc':>9s} {'test_brier':>10s} {'test_ece':>8s} "
+        f"{'value/1000':>11s} {'coverage':>9s}"
+    )
     print(header)
     for model_type, metadata in results["models"].items():
         cv = metadata["metrics"]["cv"]
         test = metadata["metrics"]["test"]
+        conformal = metadata["metrics"].get("conformal_test") or {}
+        coverage = conformal.get("coverage")
         print(
-            f"{model_type:<10s} {metadata['threshold']:>9.4f} {cv['pr_auc']:>10.4f} "
-            f"{test['pr_auc']:>11.4f} {test['roc_auc']:>9.4f} {test['f1']:>8.4f} "
-            f"{test['net_value_per_1000_sessions']:>11.2f}"
+            f"{model_type:<10s} {str(metadata['calibration']['method']):<9s} "
+            f"{metadata['threshold']:>9.4f} {cv['pr_auc']:>10.4f} "
+            f"{test['pr_auc']:>11.4f} {test['roc_auc']:>9.4f} {test['brier']:>10.4f} "
+            f"{test['ece']:>8.4f} {test['net_value_per_1000_sessions']:>11.2f} "
+            f"{coverage if coverage is not None else float('nan'):>9.4f}"
         )
+    print(f"champion {results['champion']} by {results['selection_rule']}")
+    tracking = results.get("tracking")
+    if tracking:
+        if tracking.get("run_id"):
+            print(f"mlflow run {tracking['run_id']}")
+            for model_type, entry in tracking["models"].items():
+                print(
+                    f"mlflow {model_type:<10s} {entry.get('registered_model', '-')} "
+                    f"version {entry.get('version', '-')} alias {entry.get('alias', '-')}"
+                )
+        print(f"mlflow {tracking.get('fallback') or 'ok'} ({tracking.get('tracking_uri')})")
 
 
 def _print_evaluate(report: dict, settings: Settings) -> None:
-    print(f"primary model {report['primary_model']}")
-    for model_type, payload in report["models"].items():
-        metrics = payload["metrics_test"]
-        policy = payload["policy_test"]
+    print(f"primary model {report['primary_model']}  champion {report.get('champion')}")
+    header = (
+        f"{'model':<10s} {'calib':<9s} {'thr':>7s} {'roc_auc':>8s} {'pr_auc':>8s} "
+        f"{'brier':>8s} {'ece':>8s} {'profit/1000':>12s} {'coverage':>9s}"
+    )
+    print(header)
+    for row in report["comparison"]:
+        coverage = row["conformal_coverage"]
         print(
-            f"{model_type:<10s} threshold {payload['threshold']:.4f} "
-            f"precision {metrics['precision']:.4f} recall {metrics['recall']:.4f} "
-            f"f1 {metrics['f1']:.4f} pr_auc {metrics['pr_auc']:.4f} "
-            f"roc_auc {metrics['roc_auc']:.4f} brier {metrics['brier']:.4f} "
-            f"ks {metrics['ks_at_threshold']:.4f}"
+            f"{row['model']:<10s} {str(row['calibration']):<9s} {row['threshold']:>7.4f} "
+            f"{row['roc_auc']:>8.4f} {row['pr_auc']:>8.4f} {row['brier']:>8.4f} "
+            f"{row['ece']:>8.4f} {row['net_value_per_1000_sessions']:>12.2f} "
+            f"{coverage if coverage is not None else float('nan'):>9.4f}"
         )
-        print(
-            f"{'':<10s} net value per 1000 sessions {metrics['net_value_per_1000_sessions']:.2f} "
-            f"(vs 0.5: {policy['gap_vs_default_per_1000_sessions']:+.2f}, "
-            f"vs always contact: {policy['gap_vs_always_contact_per_1000_sessions']:+.2f})"
-        )
+    print("held-out split, threshold chosen on out-of-fold training probabilities")
     print(f"metrics  {settings.reports_dir / 'metrics.json'}")
     print(f"figures  {settings.figures_dir}")
     print(f"decile lift table {settings.reports_dir / 'decile_lift.csv'}")
@@ -168,6 +233,50 @@ def _print_drift(report: dict, settings: Settings) -> None:
     print(f"report {settings.reports_dir / 'drift.json'}")
 
 
+def _print_tune(results: dict, settings: Settings) -> None:
+    print(
+        f"trials requested {results['trials_requested']} per model, "
+        f"timeout {results['timeout_seconds']}s, {results['duration_seconds']}s total"
+    )
+    header = f"{'model':<10s} {'done':>5s} {'pruned':>7s} {'pr_auc_oof':>11s} {'value/1000':>11s}"
+    print(header)
+    for model_type, payload in results["models"].items():
+        pr_auc = payload["best_pr_auc_oof"]
+        print(
+            f"{model_type:<10s} {payload['completed']:>5d} {payload['pruned']:>7d} "
+            f"{pr_auc if pr_auc is not None else float('nan'):>11.4f} "
+            f"{payload['best_value_per_1000']:>11.2f}"
+        )
+        for key, value in sorted(payload["best_params"].items()):
+            print(f"    {key} = {value}")
+    print(f"tuned config {results['path']}")
+    print(f"studies      {settings.optuna_storage}")
+
+
+def _print_evidently(payload: dict) -> None:
+    features = payload["features"]
+    print(
+        f"evidently {payload['evidently_version']} reference {payload['reference']} "
+        f"({payload['rows']['reference']} rows) current {payload['current']} "
+        f"({payload['rows']['current']} rows)"
+    )
+    print(
+        f"features {features['columns_checked']} drifted "
+        f"{features['drifted_count']} share {features['drifted_share']:.4f}"
+    )
+    for row in features["details"][:8]:
+        state = "drift" if row["drifted"] else "stable"
+        print(f"{state:<7s} p {row['value']:>8.5f}  {row['column']}")
+    target = payload["target"]
+    delta = target["delta"]
+    print(
+        f"target {target['column']} rate {target['reference_rate']:.4f} -> "
+        f"{target['current_rate']:.4f} delta {delta:+.4f} psi {target['psi']:.4f}"
+    )
+    print(f"html {payload['html']}")
+    print(f"json {payload['json']}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -198,7 +307,16 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: {exc}", file=sys.stderr)
             return 1
         print(report.render())
-        return 0 if report.ok else 1
+        ok = report.ok
+        if config.processed_path.is_file():
+            from shopper_intent.data.validate import validate_processed
+
+            processed = validate_processed(config)
+            print()
+            print("processed table")
+            print(processed.render())
+            ok = ok and processed.ok
+        return 0 if ok else 1
 
     if args.command == "features":
         from shopper_intent.features.build import read_feature_schema, write_processed
@@ -220,13 +338,33 @@ def main(argv: list[str] | None = None) -> int:
         from shopper_intent.models.train import train
 
         try:
-            results = train(config, model_types=args.models, version=args.version)
-        except FileNotFoundError as exc:
+            results = train(
+                config, model_types=args.models, version=args.version, track=args.track
+            )
+        except (FileNotFoundError, ValueError) as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1
         _print_train(results)
         for model_type, path in results["artifacts"].items():
             print(f"{model_type} artifact {path}")
+        return 0
+
+    if args.command == "tune":
+        from shopper_intent.tuning.search import tune
+
+        try:
+            results = tune(
+                config,
+                models=args.models,
+                trials=args.trials,
+                timeout=args.timeout,
+                out=args.out,
+                command="tune " + " ".join(argv if argv is not None else sys.argv[1:]),
+            )
+        except (FileNotFoundError, ValueError, RuntimeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        _print_tune(results, config)
         return 0
 
     if args.command == "evaluate":
@@ -267,6 +405,24 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: {exc}", file=sys.stderr)
             return 1
         _print_drift(report, config)
+        if args.evidently:
+            from shopper_intent.monitor.evidently_report import (
+                EvidentlyUnavailable,
+                drift_evidently,
+            )
+
+            try:
+                payload = drift_evidently(
+                    config,
+                    current_path=args.current,
+                    reference_months=_months(args.reference_months),
+                    current_months=_months(args.current_months),
+                )
+            except EvidentlyUnavailable as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                return 1
+            print()
+            _print_evidently(payload)
         return 0
 
     if args.command == "serve":

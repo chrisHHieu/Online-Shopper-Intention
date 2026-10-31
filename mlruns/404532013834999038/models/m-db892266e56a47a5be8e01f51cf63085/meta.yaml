@@ -1,0 +1,10 @@
+artifact_location: file:C:/Users/HP/Reeve/798ac4bc-2c1/gh-repos/Online-Shopper-Intention/mlruns/404532013834999038/models/m-db892266e56a47a5be8e01f51cf63085/artifacts
+creation_timestamp: 1793457864312
+experiment_id: '404532013834999038'
+last_updated_timestamp: 1793457924864
+model_id: m-db892266e56a47a5be8e01f51cf63085
+model_type: null
+name: catboost_model
+source_run_id: 36678e5c6e534fa3a679e9c26b3d62d9
+status: 2
+status_message: null

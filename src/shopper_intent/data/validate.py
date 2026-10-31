@@ -100,8 +100,17 @@ def validate_frame(
     frame: pd.DataFrame,
     config: Settings,
     schema: dict[str, dict[str, Any]] | None = None,
+    pandera: bool = True,
 ) -> ValidationReport:
-    """Apply the data contract and collect every finding, not just the first."""
+    """Apply the data contract and collect every finding, not just the first.
+
+    The declarative rules below are the contract; pandera re-checks the same
+    frame with a typed schema when it is installed, catching a value that does
+    not fit its declared type or range and any unexpected column. Pandera coerces
+    types, because read_csv dtype choices vary between pandas versions, so a
+    numeric string is accepted while a non-numeric one is not. Both layers report
+    into the same list of checks.
+    """
     schema = DEFAULT_SCHEMA if schema is None else schema
     report = ValidationReport(row_count=len(frame), column_count=frame.shape[1])
 
@@ -184,8 +193,26 @@ def validate_frame(
     else:
         report.add("row_count", "pass", f"{report.row_count} rows, need {config.data.min_rows}")
 
+    if pandera:
+        from shopper_intent.data.contracts import check_raw
+
+        report.checks.extend(check_raw(frame, schema))
+
     return report
 
 
 def validate(config: Settings, schema: dict[str, dict[str, Any]] | None = None) -> ValidationReport:
     return validate_frame(load_raw(config), config, schema=schema)
+
+
+def validate_processed(config: Settings, frame: pd.DataFrame | None = None) -> ValidationReport:
+    """Pandera contract on the processed table written by ``features``."""
+    from shopper_intent.data.contracts import check_processed
+    from shopper_intent.features.build import read_feature_schema, read_processed
+
+    frame = read_processed(config) if frame is None else frame
+    features = read_feature_schema(config)["features"]
+    report = ValidationReport(row_count=len(frame), column_count=frame.shape[1])
+    for check in check_processed(frame, config, features):
+        report.checks.append(check)
+    return report

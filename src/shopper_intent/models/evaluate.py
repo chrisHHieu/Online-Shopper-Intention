@@ -21,7 +21,7 @@ import pandas as pd  # noqa: E402
 from sklearn.calibration import calibration_curve  # noqa: E402
 from sklearn.metrics import precision_recall_curve, roc_auc_score  # noqa: E402
 
-from shopper_intent.config import Settings  # noqa: E402
+from shopper_intent.config import MODEL_NAMES, Settings  # noqa: E402
 from shopper_intent.features.build import read_feature_schema, read_processed  # noqa: E402
 from shopper_intent.models import registry  # noqa: E402
 from shopper_intent.models.metrics import (  # noqa: E402
@@ -32,7 +32,12 @@ from shopper_intent.models.metrics import (  # noqa: E402
 )
 from shopper_intent.models.sensitivity import cost_sensitivity  # noqa: E402
 
-PRIMARY_COLORS = {"lightgbm": "#1f5f8b", "logistic": "#c46a1b"}
+PRIMARY_COLORS = {
+    "lightgbm": "#1f5f8b",
+    "logistic": "#c46a1b",
+    "xgboost": "#2f7d5b",
+    "catboost": "#8b3f6d",
+}
 
 
 def _figure_path(config: Settings, name: str) -> Path:
@@ -89,8 +94,8 @@ def plot_calibration(
     fig, axis = plt.subplots(figsize=(5.6, 4.8))
     axis.plot([0, 1], [0, 1], linestyle="--", color="#777777", label="perfect calibration")
     for label, values, color in (
-        ("raw LightGBM scores", raw, "#999999"),
-        ("isotonic calibrated", calibrated, PRIMARY_COLORS.get(model_type, "#1f5f8b")),
+        ("raw scores", raw, "#999999"),
+        ("calibrated", calibrated, PRIMARY_COLORS.get(model_type, "#1f5f8b")),
     ):
         observed, predicted = calibration_curve(y_true, values, n_bins=10, strategy="quantile")
         axis.plot(predicted, observed, marker="o", markersize=3, label=label, color=color)
@@ -226,9 +231,26 @@ def permutation_importance_rows(
     return rows
 
 
+def _band_shares(model: Any, target: np.ndarray, probabilities: np.ndarray) -> dict[str, Any]:
+    """Share of held-out rows per conformal band, with the observed conversion rate."""
+    bands = model.band(probabilities)
+    rows: dict[str, Any] = {}
+    for band in ("skip", "standard", "priority", "unsupported"):
+        mask = bands == band
+        count = int(mask.sum())
+        if count == 0:
+            continue
+        rows[band] = {
+            "sessions": count,
+            "share": float(count / len(bands)),
+            "observed_conversion_rate": float(np.asarray(target)[mask].mean()),
+        }
+    return rows
+
+
 def load_models(config: Settings) -> dict[str, tuple[Any, dict[str, Any]]]:
     loaded: dict[str, tuple[Any, dict[str, Any]]] = {}
-    for model_type in ("logistic", "lightgbm"):
+    for model_type in MODEL_NAMES:
         if registry.available_versions(config.models_dir, model_type):
             loaded[model_type] = registry.load_latest(config.models_dir, model_type)
     if not loaded:
@@ -278,11 +300,21 @@ def evaluate(config: Settings, n_repeats: int = 5) -> dict[str, Any]:
             "version": metadata.get("version"),
             "trained_at": metadata.get("trained_at"),
             "threshold": model.threshold,
+            "calibration": metadata.get("calibration", {}).get("method"),
             "metrics_cv": metadata.get("metrics", {}).get("cv"),
             "metrics_test": metrics,
             "policy_test": policy,
             "decile_lift_test": lift_rows,
             "brier_raw_test": float(np.mean((raw - y_test) ** 2)),
+            "calibration_oof": {
+                key: value
+                for key, value in (metadata.get("calibration") or {}).items()
+                if key in {"method", "requested", "selection", "raw_oof_brier",
+                           "calibrated_oof_brier"}
+            },
+            "conformal_test": metadata.get("metrics", {}).get("conformal_test"),
+            "conformal_coverage": model.coverage(y_test, proba),
+            "bands_test": _band_shares(model, y_test, proba),
         }
 
     primary = _primary_model_type(config)
@@ -316,6 +348,30 @@ def evaluate(config: Settings, n_repeats: int = 5) -> dict[str, Any]:
     report = {
         "generated_at": registry.utc_now_iso(),
         "primary_model": primary,
+        "champion": max(
+            report_models,
+            key=lambda name: report_models[name]["metrics_cv"]["net_value_per_1000_sessions"],
+        )
+        if report_models
+        else None,
+        "comparison": [
+            {
+                "model": name,
+                "calibration": payload["calibration"],
+                "roc_auc": payload["metrics_test"]["roc_auc"],
+                "pr_auc": payload["metrics_test"]["pr_auc"],
+                "brier": payload["metrics_test"]["brier"],
+                "ece": payload["metrics_test"]["ece"],
+                "precision": payload["metrics_test"]["precision"],
+                "recall": payload["metrics_test"]["recall"],
+                "threshold": payload["threshold"],
+                "net_value_per_1000_sessions": payload["metrics_test"][
+                    "net_value_per_1000_sessions"
+                ],
+                "conformal_coverage": payload["conformal_coverage"],
+            }
+            for name, payload in report_models.items()
+        ],
         "data": {
             "sha256": primary_metadata.get("data_sha256"),
             "raw_rows": int(schema.get("rows", len(frame))),
@@ -334,7 +390,8 @@ def evaluate(config: Settings, n_repeats: int = 5) -> dict[str, Any]:
         "protocol": {
             "headline": "stratified 5-fold cross-validation on the training split",
             "threshold": "chosen on out-of-fold training probabilities",
-            "calibration": "isotonic, fitted on out-of-fold training probabilities",
+            "calibration": "isotonic or Platt, chosen by out-of-fold Brier score",
+            "conformal": "split conformal quantile on out-of-fold scores, coverage measured on test",
             "held_out": "stratified 20 percent split, scored once for the numbers below",
         },
         "models": report_models,

@@ -1,0 +1,475 @@
+{
+  "version": "20261031T144050Z",
+  "model_type": "catboost",
+  "seed": 42,
+  "config_hash": "99aa0d46f08f1126c781db378f60e357a9cbe519cf086b94bb7ed7da51769b8f",
+  "config_path": "C:\\Users\\HP\\Reeve\\798ac4bc-2c1\\gh-repos\\Online-Shopper-Intention\\configs\\tuned.yaml",
+  "data_sha256": "b3055ee355f59134d851d32641183cb4a8b45def7124d2f50442a042f358e0d9",
+  "git_commit": "5b95888",
+  "git_dirty": true,
+  "trained_at": "2026-10-31T14:42:13+00:00",
+  "threshold": 0.015544041450777202,
+  "threshold_selection": {
+    "objective": "expected_net_value",
+    "source": "out_of_fold_train_probabilities",
+    "net_value_per_1000_sessions": 14813.057583130576,
+    "contact_rate": 0.6370640713706407,
+    "candidates": 31
+  },
+  "business": {
+    "value_per_conversion": 100.0,
+    "cost_per_outreach": 1.0,
+    "default_threshold": 0.5
+  },
+  "protocol": {
+    "cv_folds": 5,
+    "cv_source": "stratified k-fold on the training split",
+    "calibration": "isotonic, fitted on out-of-fold training probabilities",
+    "held_out": "stratified 80/20 split, scored once",
+    "conformal": "split conformal, alpha 0.1, quantile fitted on out-of-fold training probabilities",
+    "native_categorical": true,
+    "train_rows": 9864,
+    "test_rows": 2466,
+    "positive_rate_train": 0.15470397404703973,
+    "positive_rate_test": 0.1549067315490673
+  },
+  "calibration": {
+    "method": "isotonic",
+    "requested": "auto",
+    "candidates": [
+      "isotonic",
+      "platt"
+    ],
+    "selection": {
+      "brier_isotonic": 0.06710996404818648,
+      "brier_platt": 0.07059563544448255
+    },
+    "clip_low": 0.0001,
+    "clip_high": 0.9999,
+    "oof_reliability": [
+      {
+        "bin_lower": 0.0001,
+        "bin_upper": 0.0006596306068601583,
+        "count": 788,
+        "mean_predicted": 0.00010000000000000003,
+        "observed_rate": 0.0
+      },
+      {
+        "bin_lower": 0.0006596306068601583,
+        "bin_upper": 0.0007836990595611285,
+        "count": 1516,
+        "mean_predicted": 0.0006596306068601582,
+        "observed_rate": 0.0006596306068601583
+      },
+      {
+        "bin_lower": 0.0007836990595611285,
+        "bin_upper": 0.018821603927986905,
+        "count": 1469,
+        "mean_predicted": 0.002722940776038121,
+        "observed_rate": 0.002722940776038121
+      },
+      {
+        "bin_lower": 0.018821603927986905,
+        "bin_upper": 0.07077435470441298,
+        "count": 1592,
+        "mean_predicted": 0.02010050251256281,
+        "observed_rate": 0.020100502512562814
+      },
+      {
+        "bin_lower": 0.07077435470441298,
+        "bin_upper": 0.10172413793103448,
+        "count": 1201,
+        "mean_predicted": 0.07077435470441297,
+        "observed_rate": 0.07077435470441298
+      },
+      {
+        "bin_lower": 0.10172413793103448,
+        "bin_upper": 0.2602739726027397,
+        "count": 1229,
+        "mean_predicted": 0.14890154597233524,
+        "observed_rate": 0.14890154597233524
+      },
+      {
+        "bin_lower": 0.2602739726027397,
+        "bin_upper": 0.58,
+        "count": 1046,
+        "mean_predicted": 0.3967495219885277,
+        "observed_rate": 0.3967495219885277
+      },
+      {
+        "bin_lower": 0.58,
+        "bin_upper": 0.9999,
+        "count": 1018,
+        "mean_predicted": 0.7868369351669942,
+        "observed_rate": 0.7868369351669942
+      }
+    ],
+    "raw_oof_brier": 0.09839995162920065,
+    "calibrated_oof_brier": 0.06710996404818648
+  },
+  "conformal": {
+    "method": "split conformal",
+    "alpha": 0.1,
+    "target_coverage": 0.9,
+    "q_hat": 0.4782608695652174,
+    "calibration_rows": 9864,
+    "bands": [
+      "skip",
+      "standard",
+      "priority"
+    ]
+  },
+  "metrics": {
+    "cv": {
+      "threshold": 0.015544041450777202,
+      "contacted": 6284,
+      "true_positives": 1524,
+      "false_positives": 4760,
+      "false_negatives": 2,
+      "true_negatives": 3578,
+      "precision": 0.24252068746021643,
+      "recall": 0.9986893840104849,
+      "conversions_captured": 1524,
+      "value_created": 152400.0,
+      "outreach_cost": 6284.0,
+      "net_value": 146116.0,
+      "net_value_per_1000_sessions": 14813.057583130576,
+      "contact_rate": 0.6370640713706407,
+      "f1": 0.39026888604353394,
+      "pr_auc": 0.735107071072143,
+      "roc_auc": 0.9349858312634571,
+      "brier": 0.06710996404818648,
+      "ece": 8.039334955397876e-06,
+      "ece_uniform": 8.039334955402108e-06,
+      "accuracy": 0.5172343876723439,
+      "ks_stat": 0.7203675509211565,
+      "ks_at_threshold": 0.42780907698242066,
+      "true_positive_rate_at_threshold": 0.9986893840104849,
+      "false_positive_rate_at_threshold": 0.5708803070280642,
+      "confusion_matrix": {
+        "tn": 3578,
+        "fp": 4760,
+        "fn": 2,
+        "tp": 1524
+      }
+    },
+    "test": {
+      "threshold": 0.015544041450777202,
+      "contacted": 1583,
+      "true_positives": 381,
+      "false_positives": 1202,
+      "false_negatives": 1,
+      "true_negatives": 882,
+      "precision": 0.2406822488945041,
+      "recall": 0.9973821989528796,
+      "conversions_captured": 381,
+      "value_created": 38100.0,
+      "outreach_cost": 1583.0,
+      "net_value": 36517.0,
+      "net_value_per_1000_sessions": 14808.191403081913,
+      "contact_rate": 0.6419302514193025,
+      "f1": 0.38778625954198476,
+      "pr_auc": 0.7189616929933104,
+      "roc_auc": 0.9285198370029444,
+      "brier": 0.07071674545237883,
+      "ece": 0.004295323215192631,
+      "ece_uniform": 0.013769918294283118,
+      "accuracy": 0.5121654501216545,
+      "ks_stat": 0.7153405151189316,
+      "ks_at_threshold": 0.42060676709107536,
+      "true_positive_rate_at_threshold": 0.9973821989528796,
+      "false_positive_rate_at_threshold": 0.5767754318618042,
+      "confusion_matrix": {
+        "tn": 882,
+        "fp": 1202,
+        "fn": 1,
+        "tp": 381
+      }
+    },
+    "cv_policy": {
+      "chosen": {
+        "threshold": 0.015544041450777202,
+        "contacted": 6284,
+        "true_positives": 1524,
+        "false_positives": 4760,
+        "false_negatives": 2,
+        "true_negatives": 3578,
+        "precision": 0.24252068746021643,
+        "recall": 0.9986893840104849,
+        "conversions_captured": 1524,
+        "value_created": 152400.0,
+        "outreach_cost": 6284.0,
+        "net_value": 146116.0,
+        "net_value_per_1000_sessions": 14813.057583130576,
+        "contact_rate": 0.6370640713706407
+      },
+      "default_threshold": {
+        "threshold": 0.5,
+        "contacted": 1186,
+        "true_positives": 891,
+        "false_positives": 295,
+        "false_negatives": 635,
+        "true_negatives": 8043,
+        "precision": 0.7512647554806071,
+        "recall": 0.5838794233289646,
+        "conversions_captured": 891,
+        "value_created": 89100.0,
+        "outreach_cost": 1186.0,
+        "net_value": 87914.0,
+        "net_value_per_1000_sessions": 8912.611516626115,
+        "contact_rate": 0.12023519870235198
+      },
+      "always_contact": {
+        "threshold": 0.0,
+        "contacted": 9864,
+        "true_positives": 1526,
+        "false_positives": 8338,
+        "false_negatives": 0,
+        "true_negatives": 0,
+        "precision": 0.15470397404703973,
+        "recall": 1.0,
+        "conversions_captured": 1526,
+        "value_created": 152600.0,
+        "outreach_cost": 9864.0,
+        "net_value": 142736.0,
+        "net_value_per_1000_sessions": 14470.397404703974,
+        "contact_rate": 1.0
+      },
+      "gap_vs_default_per_1000_sessions": 5900.446066504461,
+      "gap_vs_always_contact_per_1000_sessions": 342.6601784266022
+    },
+    "test_policy": {
+      "chosen": {
+        "threshold": 0.015544041450777202,
+        "contacted": 1583,
+        "true_positives": 381,
+        "false_positives": 1202,
+        "false_negatives": 1,
+        "true_negatives": 882,
+        "precision": 0.2406822488945041,
+        "recall": 0.9973821989528796,
+        "conversions_captured": 381,
+        "value_created": 38100.0,
+        "outreach_cost": 1583.0,
+        "net_value": 36517.0,
+        "net_value_per_1000_sessions": 14808.191403081913,
+        "contact_rate": 0.6419302514193025
+      },
+      "default_threshold": {
+        "threshold": 0.5,
+        "contacted": 285,
+        "true_positives": 210,
+        "false_positives": 75,
+        "false_negatives": 172,
+        "true_negatives": 2009,
+        "precision": 0.7368421052631579,
+        "recall": 0.5497382198952879,
+        "conversions_captured": 210,
+        "value_created": 21000.0,
+        "outreach_cost": 285.0,
+        "net_value": 20715.0,
+        "net_value_per_1000_sessions": 8400.243309002431,
+        "contact_rate": 0.11557177615571776
+      },
+      "always_contact": {
+        "threshold": 0.0,
+        "contacted": 2466,
+        "true_positives": 382,
+        "false_positives": 2084,
+        "false_negatives": 0,
+        "true_negatives": 0,
+        "precision": 0.1549067315490673,
+        "recall": 1.0,
+        "conversions_captured": 382,
+        "value_created": 38200.0,
+        "outreach_cost": 2466.0,
+        "net_value": 35734.0,
+        "net_value_per_1000_sessions": 14490.673154906732,
+        "contact_rate": 1.0
+      },
+      "gap_vs_default_per_1000_sessions": 6407.948094079482,
+      "gap_vs_always_contact_per_1000_sessions": 317.5182481751817
+    },
+    "raw_test_brier": 0.1019193184208281,
+    "decile_lift_test": [
+      {
+        "decile": 1,
+        "sessions": 247,
+        "positives": 188,
+        "response_rate": 0.7611336032388664,
+        "lift": 4.913495983212158,
+        "cumulative_positives": 188,
+        "cumulative_capture": 0.49214659685863876,
+        "min_score": 0.58,
+        "max_score": 0.9565217391304348
+      },
+      {
+        "decile": 2,
+        "sessions": 247,
+        "positives": 99,
+        "response_rate": 0.4008097165991903,
+        "lift": 2.5874260762659773,
+        "cumulative_positives": 287,
+        "cumulative_capture": 0.7513089005235603,
+        "min_score": 0.2602739726027397,
+        "max_score": 0.58
+      },
+      {
+        "decile": 3,
+        "sessions": 247,
+        "positives": 50,
+        "response_rate": 0.20242914979757085,
+        "lift": 1.3067808465989783,
+        "cumulative_positives": 337,
+        "cumulative_capture": 0.8821989528795812,
+        "min_score": 0.10172413793103448,
+        "max_score": 0.2602739726027397
+      },
+      {
+        "decile": 4,
+        "sessions": 247,
+        "positives": 21,
+        "response_rate": 0.08502024291497975,
+        "lift": 0.5488479555715708,
+        "cumulative_positives": 358,
+        "cumulative_capture": 0.93717277486911,
+        "min_score": 0.07077435470441298,
+        "max_score": 0.10172413793103448
+      },
+      {
+        "decile": 5,
+        "sessions": 247,
+        "positives": 17,
+        "response_rate": 0.06882591093117409,
+        "lift": 0.44430548784365265,
+        "cumulative_positives": 375,
+        "cumulative_capture": 0.981675392670157,
+        "min_score": 0.024489795918367346,
+        "max_score": 0.07077435470441298
+      },
+      {
+        "decile": 6,
+        "sessions": 247,
+        "positives": 5,
+        "response_rate": 0.020242914979757085,
+        "lift": 0.13067808465989783,
+        "cumulative_positives": 380,
+        "cumulative_capture": 0.9947643979057592,
+        "min_score": 0.018821603927986905,
+        "max_score": 0.024
+      },
+      {
+        "decile": 7,
+        "sessions": 246,
+        "positives": 1,
+        "response_rate": 0.0040650406504065045,
+        "lift": 0.02624185927723152,
+        "cumulative_positives": 381,
+        "cumulative_capture": 0.9973821989528796,
+        "min_score": 0.0007836990595611285,
+        "max_score": 0.018821603927986905
+      },
+      {
+        "decile": 8,
+        "sessions": 246,
+        "positives": 1,
+        "response_rate": 0.0040650406504065045,
+        "lift": 0.02624185927723152,
+        "cumulative_positives": 382,
+        "cumulative_capture": 1.0,
+        "min_score": 0.0006596306068601583,
+        "max_score": 0.0007836990595611285
+      },
+      {
+        "decile": 9,
+        "sessions": 246,
+        "positives": 0,
+        "response_rate": 0.0,
+        "lift": 0.0,
+        "cumulative_positives": 382,
+        "cumulative_capture": 1.0,
+        "min_score": 0.0006596306068601583,
+        "max_score": 0.0006596306068601583
+      },
+      {
+        "decile": 10,
+        "sessions": 246,
+        "positives": 0,
+        "response_rate": 0.0,
+        "lift": 0.0,
+        "cumulative_positives": 382,
+        "cumulative_capture": 1.0,
+        "min_score": 0.0001,
+        "max_score": 0.0006596306068601583
+      }
+    ],
+    "conformal_test": {
+      "alpha": 0.1,
+      "target_coverage": 0.9,
+      "q_hat": 0.4782608695652174,
+      "coverage": 0.8998377939983779,
+      "mean_set_size": 1.0,
+      "empty_fraction": 0.0,
+      "bands": {
+        "skip": {
+          "sessions": 2181,
+          "share": 0.8844282238442822,
+          "observed_conversion_rate": 0.07886290692342962
+        },
+        "standard": {
+          "sessions": 0,
+          "share": 0.0,
+          "observed_conversion_rate": 0.0
+        },
+        "priority": {
+          "sessions": 285,
+          "share": 0.11557177615571776,
+          "observed_conversion_rate": 0.7368421052631579
+        }
+      },
+      "calibration_source": "out-of-fold training probabilities",
+      "test_coverage": 0.8998377939983779,
+      "test_alpha": 0.1
+    }
+  },
+  "features": [
+    "Administrative",
+    "Administrative_Duration",
+    "Informational",
+    "Informational_Duration",
+    "ProductRelated",
+    "ProductRelated_Duration",
+    "BounceRates",
+    "ExitRates",
+    "PageValues",
+    "SpecialDay",
+    "OperatingSystems",
+    "Browser",
+    "Region",
+    "TrafficType",
+    "PageValuePerProductPage",
+    "DurationPerPage",
+    "BounceExitSpread",
+    "Month_Feb",
+    "Month_Mar",
+    "Month_May",
+    "Month_June",
+    "Month_Jul",
+    "Month_Aug",
+    "Month_Sep",
+    "Month_Oct",
+    "Month_Nov",
+    "Month_Dec",
+    "VisitorType_Returning_Visitor",
+    "VisitorType_New_Visitor",
+    "VisitorType_Other",
+    "Weekend_False",
+    "Weekend_True"
+  ],
+  "oof": {
+    "probabilities": "oof_probabilities.npy",
+    "labels": "oof_labels.npy",
+    "rows": 9864,
+    "note": "calibrated out-of-fold training probabilities, aligned with the train split"
+  }
+}

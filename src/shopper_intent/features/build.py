@@ -22,6 +22,9 @@ from shopper_intent.data.fetch import load_raw
 
 RATIO_COLUMNS = ["PageValuePerProductPage", "DurationPerPage", "BounceExitSpread"]
 
+#: Level used for a categorical value the fitted vocabulary never saw.
+MISSING_TOKEN = "__missing__"
+
 RAW_COLUMNS = [
     "Administrative",
     "Administrative_Duration",
@@ -50,7 +53,12 @@ def _one_hot(frame: pd.DataFrame, column: str, categories: list[Any]) -> pd.Data
     else:
         series = series.astype(str)
     categorical = pd.Categorical(series, categories=categories)
-    encoded = pd.get_dummies(categorical, prefix=column, dtype=np.int8)
+    # get_dummies restarts the index when handed a bare Categorical, which would
+    # silently misalign every filtered frame (drift periods, serving batches).
+    # Handing it a Series keeps the caller's index.
+    encoded = pd.get_dummies(
+        pd.Series(categorical, index=series.index), prefix=column, dtype=np.int8
+    )
     encoded.columns = [f"{column}_{value}" for value in categories]
     return encoded
 
@@ -104,6 +112,55 @@ def feature_columns(config: Settings) -> list[str]:
         else:
             placeholder[column] = str(categories[0])
     return list(build_features(placeholder, config).columns)
+
+
+def native_numeric_columns(config: Settings) -> list[str]:
+    """Numeric part of the native table: the configured numerics plus ratios."""
+    return [*config.features.numeric, *RATIO_COLUMNS]
+
+
+def native_feature_columns(config: Settings) -> list[str]:
+    """Column order of the native table used by CatBoost and XGBoost."""
+    return [*native_numeric_columns(config), *config.features.categorical]
+
+
+def to_native(
+    matrix: pd.DataFrame,
+    vocabulary: dict[str, list[Any]],
+    as_category: bool = False,
+) -> pd.DataFrame:
+    """Recover the raw categorical columns from the fixed one-hot block.
+
+    The one-hot matrix is the stored contract, so CatBoost and XGBoost get their
+    native categorical view by inverting it rather than by keeping a second
+    processed table. The inversion is exact because the vocabulary is fixed and
+    the encoder writes exactly one active column per row. A row with no active
+    column (an unseen value) becomes a missing category instead of silently
+    landing on the first one.
+    """
+    dummy_columns = {
+        f"{name}_{value}" for name, categories in vocabulary.items() for value in categories
+    }
+    numeric = [column for column in matrix.columns if column not in dummy_columns]
+    native = matrix[numeric].astype("float64").copy()
+    for column, categories in vocabulary.items():
+        names = [f"{column}_{value}" for value in categories]
+        block = matrix[names].to_numpy(dtype=float)
+        positions = np.argmax(block, axis=1)
+        known = block.sum(axis=1) > 0
+        values = np.array([str(value) for value in categories], dtype=object)[positions]
+        series = pd.Series(values, index=matrix.index, dtype=object)
+        # An unseen value must not become NaN: CatBoost refuses NaN in a
+        # categorical column and XGBoost would read it as missing rather than as
+        # its own level. Give the row the explicit token instead.
+        series.loc[~known] = MISSING_TOKEN
+        if as_category:
+            native[column] = pd.Categorical(
+                series, categories=[*[str(v) for v in categories], MISSING_TOKEN]
+            )
+        else:
+            native[column] = series.astype(str)
+    return native
 
 
 def assign_split(frame: pd.DataFrame, config: Settings) -> pd.DataFrame:

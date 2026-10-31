@@ -27,6 +27,38 @@ def ks_statistic(y_true: np.ndarray, proba: np.ndarray) -> float:
     return float(np.max(tpr - fpr))
 
 
+def expected_calibration_error(
+    y_true: np.ndarray,
+    proba: np.ndarray,
+    bins: int = 10,
+    strategy: str = "quantile",
+) -> float:
+    """Sample weighted gap between mean predicted probability and observed rate.
+
+    ``quantile`` bins hold the same number of rows and are the right default
+    when scores cluster near zero, which they do here. ``uniform`` uses equal
+    width bins and is reported alongside in the model card as a second view.
+    """
+    y = np.asarray(y_true).astype(int)
+    p = np.asarray(proba, dtype=float)
+    if len(p) == 0:
+        return 0.0
+    if strategy == "quantile":
+        edges = np.unique(np.quantile(p, np.linspace(0.0, 1.0, bins + 1)))
+        if len(edges) < 3:
+            return 0.0
+    else:
+        edges = np.linspace(0.0, 1.0, bins + 1)
+    positions = np.clip(np.searchsorted(edges, p, side="right") - 1, 0, len(edges) - 2)
+    total = 0.0
+    for index in range(len(edges) - 1):
+        mask = positions == index
+        count = int(mask.sum())
+        if count:
+            total += count / len(p) * abs(float(y[mask].mean()) - float(p[mask].mean()))
+    return float(total)
+
+
 def value_summary(
     y_true: np.ndarray,
     proba: np.ndarray,
@@ -86,6 +118,8 @@ def evaluate_predictions(
         "pr_auc": float(average_precision_score(y, p)),
         "roc_auc": float(roc_auc_score(y, p)),
         "brier": float(brier_score_loss(y, p)),
+        "ece": expected_calibration_error(y, p),
+        "ece_uniform": expected_calibration_error(y, p, strategy="uniform"),
         "accuracy": float((tp + tn) / len(y)) if len(y) else 0.0,
         "ks_stat": ks_statistic(y, p),
         "ks_at_threshold": float(tpr - fpr),

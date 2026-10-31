@@ -1,0 +1,10 @@
+artifact_location: file:C:/Users/HP/Reeve/798ac4bc-2c1/gh-repos/Online-Shopper-Intention/mlruns/404532013834999038/models/m-bc19c771915e45589361d9f48a726d44/artifacts
+creation_timestamp: 1793457807670
+experiment_id: '404532013834999038'
+last_updated_timestamp: 1793457822457
+model_id: m-bc19c771915e45589361d9f48a726d44
+model_type: null
+name: xgboost_model
+source_run_id: 36678e5c6e534fa3a679e9c26b3d62d9
+status: 2
+status_message: null

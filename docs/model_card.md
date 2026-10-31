@@ -35,7 +35,7 @@ The dataset has no customer identifiers and no timestamps, so a random stratifie
 5. Both models are refitted on the whole training split and registered as `models/<type>/<version>/`.
 6. The held-out split is scored once by `evaluate`; its numbers are in the report and in this card.
 
-LightGBM settings: 400 trees, learning rate 0.05, 31 leaves, minimum 40 samples per leaf, row and column subsampling 0.9, L2 penalty 1.0, `is_unbalance` for class imbalance, one thread with `deterministic` enabled. Logistic regression: L2 with C=1.0, `class_weight=balanced`, standardised inputs.
+LightGBM settings after the Optuna search (`configs/tuned.yaml`): 250 trees, learning rate 0.018, 10 leaves, minimum 46 samples per leaf, row subsampling 0.755, column subsampling 0.636, L2 penalty 5.13, `is_unbalance` for class imbalance, one thread with `deterministic` enabled. The search ran on the training split only, TPE sampler with a MedianPruner, and every trial was scored by out-of-fold net value, not accuracy. Logistic regression: L2 with C=0.315, `class_weight=balanced`, standardised inputs.
 
 ## Metrics
 
@@ -43,38 +43,40 @@ Cross-validated, out-of-fold, 9,864 sessions:
 
 | Model | PR-AUC | ROC-AUC | Brier | Precision | Recall | F1 | Net value per 1000 |
 |---|---|---|---|---|---|---|---|
-| Logistic regression | 0.6620 | 0.9061 | 0.0780 | 0.2005 | 0.9961 | 0.3338 | 14,641.12 |
-| LightGBM | 0.7333 | 0.9311 | 0.0688 | 0.2472 | 0.9967 | 0.3962 | 14,796.03 |
+| Logistic regression | 0.6614 | 0.9060 | 0.0780 | 0.2061 | 0.9948 | 0.3415 | 14,642.64 |
+| LightGBM (champion) | 0.7332 | 0.9359 | 0.0676 | 0.2513 | 1.0000 | 0.4017 | 14,844.28 |
+| XGBoost | 0.7325 | 0.9290 | 0.0694 | 0.2387 | 1.0000 | 0.3855 | 14,815.29 |
+| CatBoost | 0.7351 | 0.9350 | 0.0671 | 0.2407 | 0.9974 | 0.3878 | 14,813.06 |
 
-Held-out, 2,466 sessions, LightGBM at threshold 0.0168:
+Held-out, 2,466 sessions, LightGBM at threshold 0.0192:
 
 | Metric | Value |
 |---|---|
-| Precision | 0.2406 |
+| Precision | 0.2513 |
 | Recall | 1.0000 |
-| F1 | 0.3878 |
-| PR-AUC | 0.7080 |
-| ROC-AUC | 0.9264 |
-| Brier | 0.0728 (0.0837 before calibration) |
-| KS at threshold | 0.4213 |
-| KS maximum | 0.6947 |
-| Confusion matrix | TN 878, FP 1,206, FN 0, TP 382 |
-| Sessions contacted | 1,588 of 2,466 (64.4 percent) |
-| Net value | 36,612.00, or 14,846.72 per 1000 sessions |
+| F1 | 0.4017 |
+| PR-AUC | 0.7196 |
+| ROC-AUC | 0.9303 |
+| Brier | 0.0710 |
+| ECE | 0.0084 |
+| Confusion matrix | TN 946, FP 1,138, FN 0, TP 382 |
+| Sessions contacted | 1,520 of 2,466 (61.6 percent) |
+| Net value | 36,680.00, or 14,874.29 per 1000 sessions |
+| Conformal band, nominal 90 percent | coverage 0.8986, mean set size 0.997 labels |
 
-Policy comparison at 100 value per conversion and 1 cost per outreach: always-contact gives 14,490.67 per 1000, the 0.5 default gives 10,263.18, the chosen threshold gives 14,846.72. The gain over always-contact is 356.04 per 1000, or 2.5 percent.
+Policy comparison at 100 value per conversion and 1 cost per outreach: always-contact gives 14,490.67 per 1000, the 0.5 default gives 9,871.45, the chosen threshold gives 14,874.29. The gain over always-contact is 383.62 per 1000, or 2.6 percent.
 
 ## Threshold and calibration
 
 The break-even probability at these economics is cost divided by value, 0.01. Because the base rate is 0.155, contacting every session already has positive expected value, which is why the value-optimal threshold sits just above the break-even point and why the margin over blanket outreach is small. Raising `business.cost_per_outreach` moves the threshold up and makes the ranking more valuable; the trade-off is visible in `reports/figures/threshold_value.png`.
 
-The cost sweep in `reports/cost_sensitivity.csv` measures this on the held-out split, with each threshold chosen on the training out-of-fold probabilities. The gain over always-contact is 356.04 per 1000 sessions at cost 1, 2,191.81 at cost 5, 5,133.82 at cost 10, 16,230.74 at cost 25 and 37,003.24 at cost 50. Always-contact breaks even at 15.49 per outreach and loses money above it, while the tuned policy stays positive across the sweep.
+The cost sweep in `reports/cost_sensitivity.csv` measures this on the held-out split, with each threshold chosen on the training out-of-fold probabilities. The gain over always-contact is 383.62 per 1000 sessions at cost 1, 2,293.19 at cost 5, 5,304.14 at cost 10, 16,311.84 at cost 25 and 37,246.55 at cost 50. Always-contact breaks even at 15.49 per outreach and loses money above it, while the tuned policy stays positive across the sweep.
 
-Isotonic calibration reduces the Brier score from 0.0837 to 0.0728 for LightGBM and from 0.1240 to 0.0821 for logistic regression. The reliability curve in `reports/figures/calibration.png` shows raw tree scores are under-confident at low probabilities and over-confident above roughly 0.2; calibrated scores track the diagonal.
+Isotonic calibration is chosen per candidate by out-of-fold Brier score and produced the held-out figures above: 0.0710 for LightGBM, 0.0707 for CatBoost, 0.0739 for XGBoost and 0.0823 for the logistic baseline. The reliability curve in `reports/figures/calibration.png` shows raw tree scores are under-confident at low probabilities and over-confident above roughly 0.2; calibrated scores track the diagonal.
 
 ## Explainability
 
-Global: permutation importance on the held-out split, measured as the drop in ROC-AUC when one column is shuffled, averaged over five repeats. `PageValues` dominates (0.0994), followed by `PageValuePerProductPage` (0.0455) and month indicators (0.0219 for May, 0.0170 for November).
+Global: permutation importance on the held-out split, measured as the drop in ROC-AUC when one column is shuffled, averaged over five repeats. `PageValues` dominates (0.1063), followed by `PageValuePerProductPage` (0.0442) and month indicators (0.0222 for May, 0.0201 for November).
 
 Local: the API returns the top three contributions per prediction. For LightGBM these are exact tree SHAP values from `pred_contrib=True`, which sum to the model output plus the base value; for logistic regression they are coefficient times scaled feature value, which sum to the logit. Both are additive attributions of the model, not causal effects.
 
